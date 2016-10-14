@@ -15,7 +15,6 @@ def constraint_programming_solve_it(items, capacity):
     knapsack += sum([x * item.weight for x, item in zip(xs, items)]) <= capacity, 'c1'
     knapsack.solve()
     taken = [int(x.varValue) for x in xs]
-    value = sum([x * item.value for x, item in zip(taken, items)])
     weight = sum([x * item.weight for x, item in zip(taken, items)])
     return knapsack.objective, weight, taken, 'Optimal' == LpStatus(knapsack)
 

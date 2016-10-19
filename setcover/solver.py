@@ -23,10 +23,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-
-from collections import namedtuple
-
+from pulp import *
+from collections import namedtuple, OrderedDict
+from itertools import izip
 Set = namedtuple("Set", ['index', 'cost', 'items'])
+
+def constraint_programming_solve_it(cover_sets):
+    def coverage_constraint_item(item):
+        return lpSum([1 * x for i, x in enumerate(xs) if item in cover_sets[i].items]) >= 1
+
+    items = {item for s in cover_sets for item in s.items}
+    set_cover = LpProblem('Set Cover', LpMinimize)
+    xs = [LpVariable('x%s'%cover_set.index, 0, 1, 'Binary') for cover_set in cover_sets]
+    costs = [x.cost for x in cover_sets]
+    set_cover += lpSum([x * cost for x, cost in izip(xs, costs)]), 'objective'
+    set_cover.constraints = OrderedDict([('covered_'+str(item), coverage_constraint_item(item)) for item in items])
+    print set_cover
+    set_cover.solve(GLPK(msg=0))
+    taken = [int(x.varValue) for x in xs]
+    return value(set_cover.objective), taken, set_cover.status
 
 def solve_it(input_data):
     # Modify this code to run your optimization algorithm
@@ -37,7 +52,7 @@ def solve_it(input_data):
     parts = lines[0].split()
     item_count = int(parts[0])
     set_count = int(parts[1])
-    
+    print 'Sets', set_count, 'items', item_count
     sets = []
     for i in range(1, set_count+1):
         parts = lines[i].split()
@@ -45,20 +60,10 @@ def solve_it(input_data):
 
     # build a trivial solution
     # pick add sets one-by-one until all the items are covered
-    solution = [0]*set_count
-    coverted = set()
-    
-    for s in sets:
-        solution[s.index] = 1
-        coverted |= set(s.items)
-        if len(coverted) >= item_count:
-            break
-        
-    # calculate the cost of the solution
-    obj = sum([s.cost*solution[s.index] for s in sets])
+    objective, solution, optimal = constraint_programming_solve_it(sets)
 
     # prepare the solution in the specified output format
-    output_data = str(obj) + ' ' + str(0) + '\n'
+    output_data = str(objective) + ' ' + str(1 if optimal else 0) + '\n'
     output_data += ' '.join(map(str, solution))
 
     return output_data

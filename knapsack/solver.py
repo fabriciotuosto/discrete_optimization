@@ -16,7 +16,7 @@ def constraint_programming_solve_it(items, capacity):
     knapsack.solve()
     taken = [int(x.varValue) for x in xs]
     weight = sum([x * item.weight for x, item in zip(taken, items)])
-    return knapsack.objective, weight, taken, 'Optimal' == LpStatus(knapsack)
+    return value(knapsack.objective), weight, taken, knapsack.status
 
 
 def simple_relaxation(items, capacity):
@@ -126,7 +126,6 @@ def solve_it(input_data):
     print 'Items:', len(items), 'capacity:', capacity
     value, weight, taken, optimal = constraint_programming_solve_it(items, capacity)
     
-    print 'Value:', value, 'Weight:',weight
     # prepare the solution in the specified output format
     output_data = str(value) + ' ' + str(1 if optimal else 0) + '\n'
     output_data += ' '.join(map(str, taken))
